@@ -21,9 +21,12 @@ def main():
                     st.error('입력값을 확인하세요')
                 else:
                     df = sheet_maker(frdate, todate, asin)
-                    if df:
+                    try:
                         df = groupby_maker(df)
                         st.dataframe(df)
+                    except:
+                        st.error('Error 발생')
+
 
 
     with tab2:
@@ -43,9 +46,11 @@ def main():
 
                     st.session_state["keywords"] = upload_file["SearchTerm"].unique().tolist()
                     df = sheet_maker_by_datadive(frdate, todate, st.session_state["keywords"])
-                    if df:
+                    try:
                         df = groupby_maker(df)
                         st.dataframe(df)
+                    except:
+                        st.error('에러발생')
 
                 else:
                     st.error("업로드 파일을 확인하세요!")
