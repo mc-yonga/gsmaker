@@ -190,6 +190,93 @@ def fetch_rank(frdate, todate, asin):
     resp = query_bq(query)
     return resp
 
+def connect_to_db():
+    conn = psycopg2.connect(
+        host="aws-0-ap-northeast-2.pooler.supabase.com",
+        port="5432",
+        dbname="postgres",
+        user="postgres.yjolqcetitlpjbwwxnly",
+        password="superDev1!@#$%^&",
+    )
+    return conn
+
+def create_table(name):
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    query = f"""
+    CREATE TABLE "{name}" (
+        search_query text,
+        search_query_volume integer,
+        market_impressions integer,
+        brand_impressions integer,
+        impressions_market_share integer,
+        market_clicks integer,
+        brand_clicks integer,
+        "#1 clicks" integer,
+        "#2 clicks" integer,
+        "#3 clicks" integer,
+        market_ctr integer,
+        brand_ctr integer,
+        ctr_gap integer,
+        brand_clicks_share integer,
+        market_conversions integer,
+        brand_Conversions integer,
+        "#1 conversion" integer,
+        "#2 conversion" integer,
+        "#3 conversion" integer,
+        purchase_market_share integer,
+        market_cvr integer,
+        brand_cvr integer,
+        "#1 cvr" integer,
+        "#2 cvr" integer,
+        "#3 cvr" integer,
+        "#1 cvr gap" integer,
+        "#2 cvr gap" integer,
+        "#3 cvr gap" integer,
+        cvr_gap integer,
+        ppc_sales_7days integer,
+        ppc_spend integer,
+        ppc_impressions integer,
+        ppc_clicks integer,
+        ppc_orders_7days integer,
+        ppc_ctr integer,
+        ppc_cvr integer,
+        ppc_acos integer,
+        folder_config text[]
+           );
+        """
+    "Search Query Tag"
+    # text ARRAY
+    cursor.execute(query)
+    conn.commit()
+    print(f"{name} 테이블 추가 완료")
+    conn.close()
+
+def insert_data(name, data):  # 모든 문자열 열에 대해 replace 수행
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    str_columns = data.select_dtypes(include=["object"])
+    data[str_columns.columns] = str_columns.applymap(lambda x: x.replace("'", "''"))
+
+    # 데이터 일괄 처리를 위한 쿼리 생성
+    values = []
+    for row in data.itertuples():
+        values.append(
+            f"('{row.search_query}', '{row.search_query_volume}', '{row.market_impressions}', '{row.brand_impressions}', {row.impressions_market_share}, '{row.market_clicks}',"
+            f" '{row.brand_clicks}', '{row._7}', '{row._8}', '{row._9}', '{row.market_ctr}', '{row.brand_ctr}', '{row.ctr_gap}', '{row.brand_clicks_share}', '{row.market_conve}' )"
+        )
+
+    query = f"""INSERT INTO "{name}" (category, main_folder, sub_folder, search_query, search_volume, original_search_query, priority, kw_push, phase, difficulty_level) VALUES {', '.join(values)}"""
+
+    try:
+        cursor.execute(query)
+        conn.commit()
+        print(f"{name} 태그 데이터 저장 완료")
+    except Exception as e:
+        print(f"데이터 삽입 중 오류 발생: {e}")
+        conn.rollback()
+    conn.close()
+
 
 def kw_normalization(data):
     data["kw_split"] = data.search_query.apply(lambda x: x.split())
