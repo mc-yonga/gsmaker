@@ -1,17 +1,6 @@
 from datadive_tab import *
 from asin_tab import *
 
-if "upload_file" not in st.session_state.keys():
-    st.session_state["upload_file"] = None
-if "asin_sheet_maker" not in st.session_state.keys():
-    st.session_state["asin_sheet_makert"] = None
-if "dive_sheet_maker" not in st.session_state.keys():
-    st.session_state["dive_sheet_maker"] = None
-if "asin_result_df" not in st.session_state.keys():
-    st.session_state["asin_result_df"] = None
-if "dive_result_df" not in st.session_state.keys():
-    st.session_state["dive_result_df"] = None
-
 
 def main():
     st.set_page_config(layout="wide")
@@ -22,10 +11,12 @@ def main():
         todate = st.text_input(label = '종료일', value = "2023-12-31")
         asin = st.text_input(label = 'ASIN', value = "B09G6BWNDP")
 
-        col1, col2, col3 = st.columns([1,1,5])
+        col1, col2, col3, cols4 = st.columns([1,1,1,5])
         with col1:
             run_btn = st.button('Run')
         with col2:
+            table_name = st.text_input('저장명을 입력하세요')
+        with col3:
             save_btn = st.button('Save')
 
         if run_btn:
@@ -37,17 +28,20 @@ def main():
                     if st.session_state["asin_sheet_maker"] is not None:
                         st.session_state["asin_result_df"] = groupby_maker(st.session_state["asin_sheet_maker"])
 
-
         if save_btn:
-            if st.session_state["asin_result_df"] is None:
-                st.error("데이터가 만들어지지 않았습니다. 입력일과 종료일 그리고 ASIN을 정확하게 입력했는지 확인해보세요")
+            if table_name:
+                with st.spinner('데이터를 저장 중입니다...'):
+
+                    if st.session_state["asin_result_df"] is None:
+                        st.error("데이터가 만들어지지 않았습니다. 입력일과 종료일 그리고 ASIN을 정확하게 입력했는지 확인해보세요")
+                    else:
+                        create_table(table_name)
+                        insert_data(table_name, st.session_state["asin_result_df"])
             else:
-                st.info('사랑해')
+                st.error('테이블 이름을 입력하세요')
 
         if st.session_state["asin_sheet_maker"] is not None:
             st.dataframe(st.session_state["asin_result_df"])
-
-
 
 
     with tab2:
@@ -55,7 +49,14 @@ def main():
         todate = st.text_input(label='종료일', value="2023-12-31", key = 'todate2')
 
         upload_file = st.file_uploader("Datadive 파일을 업로드 하세요!", type = ["xlsx", "csv"])
-        upload_btn = st.button("Run", key = 'dive_run')
+
+        col1, col2, col3, cols4 = st.columns([1,1,1,5])
+        with col1:
+            upload_btn = st.button("Run", key='dive_run')
+        with col2:
+            table_name = st.text_input('저장명을 입력하세요', key = 'dive_table_name')
+        with col3:
+            save_btn = st.button('Save', key = 'dive_save')
 
         if upload_btn:
             with st.spinner('잠시만 기다려주세요 ...'):
@@ -70,9 +71,31 @@ def main():
                     if st.session_state["dive_sheet_maker"] is not None:
                         st.session_state["dive_result_df"] = groupby_maker(st.session_state["dive_sheet_maker"])
 
+        if save_btn:
+            if table_name:
+                with st.spinner('데이터를 저장 중입니다...'):
+                    if st.session_state["dive_result_df"] is None:
+                        st.error("데이터가 만들어지지 않았습니다. 입력일과 종료일 그리고 데이터가 제대로 업로드 되었는지 확인해보세요")
+                    else:
+                        create_table(table_name)
+                        insert_data(table_name, st.session_state["dive_result_df"])
+            else:
+                st.error('테이블 이름을 입력하세요')
+
         if st.session_state["dive_sheet_maker"] is not None:
             st.dataframe(st.session_state["dive_result_df"])
 
 
 if __name__ == '__main__':
+    if "upload_file" not in st.session_state.keys():
+        st.session_state["upload_file"] = None
+    if "asin_sheet_maker" not in st.session_state.keys():
+        st.session_state["asin_sheet_maker"] = None
+    if "dive_sheet_maker" not in st.session_state.keys():
+        st.session_state["dive_sheet_maker"] = None
+    if "asin_result_df" not in st.session_state.keys():
+        st.session_state["asin_result_df"] = None
+    if "dive_result_df" not in st.session_state.keys():
+        st.session_state["dive_result_df"] = None
+
     main()

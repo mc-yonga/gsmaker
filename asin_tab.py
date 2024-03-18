@@ -1,6 +1,5 @@
 from superDev import *
 
-
 def merge_data(frdate, todate, asin):
     st.session_state["merge_data"] = None
     st.session_state["asin_sheet_maker"] = None
@@ -76,27 +75,27 @@ def make_multiple_factors(total_df : pd.DataFrame):
     total_df['clicks_share'] = total_df.brand_clicks / total_df.market_clicks
     total_df['conversions_share'] = total_df.brand_conversions / total_df.market_conversions
 
-    total_df['#1 clicks'] = round(total_df.market_clicks * (total_df.asin_click_share_1 / 100))
-    total_df["#2 clicks"] = round(total_df.market_clicks * (total_df.asin_click_share_2 / 100))
-    total_df["#3 clicks"] = round(total_df.market_clicks * (total_df.asin_click_share_3 / 100))
+    total_df['clicks_compe1'] = round(total_df.market_clicks * (total_df.asin_click_share_1 / 100))
+    total_df["clicks_compe2"] = round(total_df.market_clicks * (total_df.asin_click_share_2 / 100))
+    total_df["clicks_compe3"] = round(total_df.market_clicks * (total_df.asin_click_share_3 / 100))
 
     total_df["market_ctr"] = total_df.market_clicks / total_df.market_impressions
     total_df["brand_ctr"] = total_df.brand_clicks / total_df.brand_impressions
     total_df['ctr_gap'] = total_df.brand_ctr - total_df.market_ctr
 
-    total_df["#1 conversion"] = round(total_df.market_conversions * (total_df.asin_conversion_share_1 / 100))
-    total_df["#2 conversion"] = round(total_df.market_conversions * (total_df.asin_conversion_share_2 / 100))
-    total_df["#3 conversion"] = round(total_df.market_conversions * (total_df.asin_conversion_share_3 / 100))
+    total_df["conversion_compe1"] = round(total_df.market_conversions * (total_df.asin_conversion_share_1 / 100))
+    total_df["conversion_compe2"] = round(total_df.market_conversions * (total_df.asin_conversion_share_2 / 100))
+    total_df["conversion_compe3"] = round(total_df.market_conversions * (total_df.asin_conversion_share_3 / 100))
 
     total_df["market_cvr"] = total_df.market_conversions / total_df.market_clicks
     total_df["brand_cvr"] = total_df.brand_conversions / total_df.brand_clicks
-    total_df["#1 cvr"] = total_df["#1 conversion"] / total_df["#1 clicks"]
-    total_df["#2 cvr"] = total_df["#2 conversion"] / total_df["#2 clicks"]
-    total_df["#3 cvr"] = total_df["#3 conversion"] / total_df["#3 clicks"]
+    total_df["cvr_compe1"] = total_df["conversion_compe1"] / total_df["clicks_compe1"]
+    total_df["cvr_compe2"] = total_df["conversion_compe2"] / total_df["clicks_compe2"]
+    total_df["cvr_compe3"] = total_df["conversion_compe3"] / total_df["clicks_compe3"]
 
-    total_df["#1 cvr gap"] = total_df["#1 cvr"] - total_df.market_cvr
-    total_df["#2 cvr gap"] = total_df["#2 cvr"] - total_df.market_cvr
-    total_df["#3 cvr gap"] = total_df["#3 cvr"] - total_df.market_cvr
+    total_df["cvr_gap_1#"] = total_df["cvr_compe1"] - total_df.market_cvr
+    total_df["cvr_gap_2#"] = total_df["cvr_compe2"] - total_df.market_cvr
+    total_df["cvr_gap_3#"] = total_df["cvr_compe3"] - total_df.market_cvr
 
     total_df = total_df.drop(columns = ['asin_click_share_1', 'asin_click_share_2','asin_click_share_3','asin_conversion_share_1','asin_conversion_share_2','asin_conversion_share_3'])
 
@@ -130,7 +129,7 @@ def groupby_maker(result):
         ['search_query_volume', 'market_impressions', 'brand_impressions', 'market_clicks', 'brand_clicks',
          'market_conversions', 'brand_conversions',
          'ppc_impressions', 'ppc_clicks', 'ppc_orders_7days', 'ppc_sales_7days', 'ppc_spend',
-         '#1 clicks', '#2 clicks', '#3 clicks', '#1 conversion', '#2 conversion', '#3 conversion']].sum()
+         'clicks_compe1', 'clicks_compe2', 'clicks_compe3', 'conversion_compe1', 'conversion_compe2', 'conversion_compe3']].sum()
 
     result_groupby['impressions_market_share'] = round(
         result_groupby.brand_impressions / result_groupby.market_impressions, 4)
@@ -142,21 +141,21 @@ def groupby_maker(result):
         result_groupby.brand_conversions / result_groupby.market_conversions, 4)
     result_groupby['market_cvr'] = round(result_groupby.market_conversions / result_groupby.market_clicks, 4)
     result_groupby['brand_cvr'] = round(result_groupby.brand_conversions / result_groupby.brand_clicks, 4)
-    result_groupby['#1 cvr'] = round(result_groupby["#1 conversion"] / result_groupby["#1 clicks"], 4)
-    result_groupby['#2 cvr'] = round(result_groupby["#2 conversion"] / result_groupby["#2 clicks"], 4)
-    result_groupby['#3 cvr'] = round(result_groupby["#3 conversion"] / result_groupby["#3 clicks"], 4)
-    result_groupby["#1 cvr gap"] = result_groupby["#1 cvr"] - result_groupby["market_cvr"]
-    result_groupby["#2 cvr gap"] = result_groupby["#1 cvr"] - result_groupby["market_cvr"]
-    result_groupby["#3 cvr gap"] = result_groupby["#1 cvr"] - result_groupby["market_cvr"]
+    result_groupby['cvr_compe1'] = round(result_groupby["conversion_compe1"] / result_groupby["clicks_compe1"], 4)
+    result_groupby['cvr_compe2'] = round(result_groupby["conversion_compe2"] / result_groupby["clicks_compe2"], 4)
+    result_groupby['cvr_compe3'] = round(result_groupby["conversion_compe3"] / result_groupby["clicks_compe3"], 4)
+    result_groupby["cvr_gap_compe1"] = result_groupby["cvr_compe1"] - result_groupby["market_cvr"]
+    result_groupby["cvr_gap_compe2"] = result_groupby["cvr_compe2"] - result_groupby["market_cvr"]
+    result_groupby["cvr_gap_compe3"] = result_groupby["cvr_compe3"] - result_groupby["market_cvr"]
     result_groupby["cvr_gap"] = result_groupby["brand_cvr"] - result_groupby["market_cvr"]
     result_groupby["ppc_ctr"] = round(result_groupby["ppc_clicks"] / result_groupby["ppc_impressions"], 4)
     result_groupby["ppc_cvr"] = round(result_groupby["ppc_orders_7days"] / result_groupby["ppc_clicks"], 4)
     result_groupby["ppc_acos"] = round(result_groupby["ppc_spend"] / result_groupby["ppc_sales_7days"], 4)
 
     result_groupby = result_groupby[['search_query_volume','market_impressions', 'brand_impressions','impressions_market_share',
-                                     'market_clicks','brand_clicks','#1 clicks', '#2 clicks', '#3 clicks', 'market_ctr', 'brand_ctr', 'ctr_gap', 'brand_clicks_share',
-                                     'market_conversions', 'brand_conversions', '#1 conversion', '#2 conversion', '#3 conversion', 'purchase_market_share',
-                                     'market_cvr','brand_cvr', '#1 cvr', '#2 cvr', '#3 cvr', '#1 cvr gap', '#2 cvr gap', '#3 cvr gap', 'cvr_gap',
+                                     'market_clicks','brand_clicks','clicks_compe1', 'clicks_compe2', 'clicks_compe3', 'market_ctr', 'brand_ctr', 'ctr_gap', 'brand_clicks_share',
+                                     'market_conversions', 'brand_conversions', 'conversion_compe1', 'conversion_compe2', 'conversion_compe3', 'purchase_market_share',
+                                     'market_cvr','brand_cvr', 'cvr_compe1', 'cvr_compe2', 'cvr_compe3', 'cvr_gap_compe1', 'cvr_gap_compe2', 'cvr_gap_compe3', 'cvr_gap',
                                      'ppc_sales_7days','ppc_spend', 'ppc_impressions', 'ppc_clicks', 'ppc_orders_7days', 'ppc_ctr', 'ppc_cvr', 'ppc_acos']]
 
     kw_data = result_groupby.groupby('search_query')['search_query_volume'].sum().reset_index()

@@ -9,6 +9,7 @@ from nltk.corpus import stopwords
 import numpy as np
 import datetime
 import streamlit as st
+import json
 
 lemmatizer = WordNetLemmatizer()
 nltk.download("wordnet")
@@ -19,7 +20,6 @@ try:
     stop_words = set(stopwords.words("english"))
 except AttributeError:
     pass
-
 
 pd.set_option('display.max_columns', None)
 
@@ -49,10 +49,10 @@ def get_sa_cred(scopes=["https://www.googleapis.com/auth/cloud-platform"]):
 
 def connect_to_db():
     conn = psycopg2.connect(
-        host="aws-0-ap-northeast-2.pooler.supabase.com",
+        host="aws-0-us-west-1.pooler.supabase.com",
         port="5432",
         dbname="postgres",
-        user="postgres.yjolqcetitlpjbwwxnly",
+        user="postgres.ozghbebrbzdxraywzuuk",
         password="superDev1!@#$%^&",
     )
     return conn
@@ -190,63 +190,52 @@ def fetch_rank(frdate, todate, asin):
     resp = query_bq(query)
     return resp
 
-def connect_to_db():
-    conn = psycopg2.connect(
-        host="aws-0-ap-northeast-2.pooler.supabase.com",
-        port="5432",
-        dbname="postgres",
-        user="postgres.yjolqcetitlpjbwwxnly",
-        password="superDev1!@#$%^&",
-    )
-    return conn
-
 def create_table(name):
     conn = connect_to_db()
     cursor = conn.cursor()
     query = f"""
-    CREATE TABLE "{name}" (
+    CREATE TABLE gs_maker.{name} (
         search_query text,
-        search_query_volume integer,
-        market_impressions integer,
-        brand_impressions integer,
-        impressions_market_share integer,
-        market_clicks integer,
-        brand_clicks integer,
-        "#1 clicks" integer,
-        "#2 clicks" integer,
-        "#3 clicks" integer,
-        market_ctr integer,
-        brand_ctr integer,
-        ctr_gap integer,
-        brand_clicks_share integer,
-        market_conversions integer,
-        brand_Conversions integer,
-        "#1 conversion" integer,
-        "#2 conversion" integer,
-        "#3 conversion" integer,
-        purchase_market_share integer,
-        market_cvr integer,
-        brand_cvr integer,
-        "#1 cvr" integer,
-        "#2 cvr" integer,
-        "#3 cvr" integer,
-        "#1 cvr gap" integer,
-        "#2 cvr gap" integer,
-        "#3 cvr gap" integer,
-        cvr_gap integer,
-        ppc_sales_7days integer,
-        ppc_spend integer,
-        ppc_impressions integer,
-        ppc_clicks integer,
-        ppc_orders_7days integer,
-        ppc_ctr integer,
-        ppc_cvr integer,
-        ppc_acos integer,
+        search_query_volume float,
+        market_impressions float,
+        brand_impressions float,
+        impressions_market_share float,
+        market_clicks float,
+        brand_clicks float,
+        clicks_compe1 float,
+        clicks_compe2 float,
+        clicks_compe3 float,
+        market_ctr float,
+        brand_ctr float,
+        ctr_gap float,
+        brand_clicks_share float,
+        market_conversions float,
+        brand_conversions float,
+        conversion_compe1 float,
+        conversion_compe2 float,
+        conversion_compe3 float,
+        purchase_market_share float,
+        market_cvr float,
+        brand_cvr float,
+        cvr_compe1 float,
+        cvr_compe2 float,
+        cvr_compe3 float,
+        cvr_gap_compe1 float,
+        cvr_gap_compe2 float,
+        cvr_gap_compe3 float,
+        cvr_gap float,
+        ppc_sales_7days float,
+        ppc_spend float,
+        ppc_impressions float,
+        ppc_clicks float,
+        ppc_orders_7days float,
+        ppc_ctr float,
+        ppc_cvr float,
+        ppc_acos float,
         folder_config text[]
            );
         """
-    "Search Query Tag"
-    # text ARRAY
+
     cursor.execute(query)
     conn.commit()
     print(f"{name} 테이블 추가 완료")
@@ -255,26 +244,106 @@ def create_table(name):
 def insert_data(name, data):  # 모든 문자열 열에 대해 replace 수행
     conn = connect_to_db()
     cursor = conn.cursor()
-    str_columns = data.select_dtypes(include=["object"])
-    data[str_columns.columns] = str_columns.applymap(lambda x: x.replace("'", "''"))
 
     # 데이터 일괄 처리를 위한 쿼리 생성
     values = []
-    for row in data.itertuples():
-        values.append(
-            f"('{row.search_query}', '{row.search_query_volume}', '{row.market_impressions}', '{row.brand_impressions}', {row.impressions_market_share}, '{row.market_clicks}',"
-            f" '{row.brand_clicks}', '{row._7}', '{row._8}', '{row._9}', '{row.market_ctr}', '{row.brand_ctr}', '{row.ctr_gap}', '{row.brand_clicks_share}', '{row.market_conve}' )"
-        )
 
-    query = f"""INSERT INTO "{name}" (category, main_folder, sub_folder, search_query, search_volume, original_search_query, priority, kw_push, phase, difficulty_level) VALUES {', '.join(values)}"""
+    for row in data.itertuples():
+        folder_config = row.folder_config
+        folder_config = json.dumps(folder_config)
+        folder_config = folder_config.replace("[", "{")
+        folder_config = folder_config.replace("]", "}")
+
+        search_query = row.search_query.replace("'", "''")
+        values.append(
+            f"('{search_query}',"
+            f" '{row.search_query_volume}',"
+            f" '{row.market_impressions}',"
+            f" '{row.brand_impressions}',"
+            f" '{row.impressions_market_share}',"
+            f" '{row.market_clicks}',"
+            f" '{row.brand_clicks}',"
+            f" '{row.clicks_compe1}',"
+            f" '{row.clicks_compe2}',"
+            f" '{row.clicks_compe3}',"
+            f" '{row.market_ctr}',"
+            f" '{row.brand_ctr}',"
+            f" '{row.ctr_gap}',"
+            f" '{row.brand_clicks_share}',"
+            f" '{row.market_conversions}',"
+            f" '{row.brand_conversions}',"
+            f" '{row.conversion_compe1}',"
+            f" '{row.conversion_compe2}',"
+            f" '{row.conversion_compe3}',"
+            f" '{row.purchase_market_share}',"
+            f" '{row.market_cvr}',"
+            f" '{row.brand_cvr}',"
+            f" '{row.cvr_compe1}',"
+            f" '{row.cvr_compe2}',"
+            f" '{row.cvr_compe3}',"
+            f" '{row.cvr_gap_compe1}',"
+            f" '{row.cvr_gap_compe2}',"
+            f" '{row.cvr_gap_compe3}',"
+            f" '{row.cvr_gap}',"
+            f" '{row.ppc_sales_7days}',"
+            f" '{row.ppc_spend}',"
+            f" '{row.ppc_impressions}',"
+            f" '{row.ppc_clicks}',"
+            f" '{row.ppc_orders_7days}',"
+            f" '{row.ppc_ctr}',"
+            f" '{row.ppc_cvr}',"
+            f" '{row.ppc_acos}',"
+            f" '{folder_config}')")
+
+    query = f"""
+    INSERT INTO gs_maker.{name} 
+    (search_query, 
+    search_query_volume, 
+    market_impressions, 
+    brand_impressions, 
+    impressions_market_share, 
+    market_clicks, 
+    brand_clicks, 
+    clicks_compe1, 
+    clicks_compe2, 
+    clicks_compe3, 
+    market_ctr, 
+    brand_ctr, 
+    ctr_gap,
+    brand_clicks_share, 
+    market_conversions, 
+    brand_conversions, 
+    conversion_compe1, 
+    conversion_compe2, 
+    conversion_compe3, 
+    purchase_market_share, 
+    market_cvr, 
+    brand_cvr, 
+    cvr_compe1, 
+    cvr_compe2, 
+    cvr_compe3, 
+    cvr_gap_compe1, 
+    cvr_gap_compe2, 
+    cvr_gap_compe3, 
+    cvr_gap, 
+    ppc_sales_7days, 
+    ppc_spend, 
+    ppc_impressions, 
+    ppc_clicks, 
+    ppc_orders_7days, 
+    ppc_ctr, 
+    ppc_cvr, 
+    ppc_acos, 
+    folder_config) VALUES {', '.join(values)}"""
 
     try:
         cursor.execute(query)
         conn.commit()
-        print(f"{name} 태그 데이터 저장 완료")
+        st.info(f"{name} 태그 데이터 저장 완료")
     except Exception as e:
-        print(f"데이터 삽입 중 오류 발생: {e}")
+        st.error(f"데이터 삽입 중 오류 발생: {e}")
         conn.rollback()
+        print(e)
     conn.close()
 
 
@@ -469,275 +538,10 @@ def make_folder(data, word_count, main_keywords_huddle, sub_keywords_huddle):
 
 
 
-def create_table(name):
-    conn = connect_to_db()
-    cursor = conn.cursor()
-    query = f"""
-    CREATE TABLE "{name}" (
-        search_query text,
-        search_query_volume integer,
-        market_impressions integer,
-        brand_impressions integer,
-        impressions_market_share integer,
-        market_clicks integer,
-        brand_clicks integer,
-        "#1 clicks" integer,
-        "#2 clicks" integer,
-        "#3 clicks" integer,
-        market_ctr integer,
-        brand_ctr integer,
-        ctr_gap integer,
-        brand_clicks_share integer,
-        market_conversions integer,
-        brand_Conversions integer,
-        "#1 conversion" integer,
-        "#2 conversion" integer,
-        "#3 conversion" integer,
-        purchase_market_share integer,
-        market_cvr integer,
-        brand_cvr integer,
-        "#1 cvr" integer,
-        "#2 cvr" integer,
-        "#3 cvr" integer,
-        "#1 cvr gap" integer,
-        "#2 cvr gap" integer,
-        "#3 cvr gap" integer,
-        cvr_gap integer,
-        ppc_sales_7days integer,
-        ppc_spend integer,
-        ppc_impressions integer,
-        ppc_clicks integer,
-        ppc_orders_7days integer,
-        ppc_ctr integer,
-        ppc_cvr integer,
-        ppc_acos integer,
-        folder_config text[]
-           );
-        """
-    "Search Query Tag"
-    # text ARRAY
-    cursor.execute(query)
-    conn.commit()
-    print(f"{name} 테이블 추가 완료")
-    conn.close()
-
-def insert_data(name, data):  # 모든 문자열 열에 대해 replace 수행
-    conn = connect_to_db()
-    cursor = conn.cursor()
-    str_columns = data.select_dtypes(include=["object"])
-    data[str_columns.columns] = str_columns.applymap(lambda x: x.replace("'", "''"))
-
-    # 데이터 일괄 처리를 위한 쿼리 생성
-    values = []
-    for row in data.itertuples():
-        values.append(
-            f"('{row.search_query}', '{row.search_query_volume}', '{row.market_impressions}', '{row.brand_impressions}', {row.impressions_market_share}, '{row.market_clicks}',"
-            f" '{row.brand_clicks}', '{row._7}', '{row._8}', '{row._9}', '{row.market_ctr}', '{row.brand_ctr}', '{row.ctr_gap}', '{row.brand_clicks_share}', '{row.market_conve}' )"
-        )
-
-    query = f"""INSERT INTO "{name}" (category, main_folder, sub_folder, search_query, search_volume, original_search_query, priority, kw_push, phase, difficulty_level) VALUES {', '.join(values)}"""
-
-    try:
-        cursor.execute(query)
-        conn.commit()
-        print(f"{name} 태그 데이터 저장 완료")
-    except Exception as e:
-        print(f"데이터 삽입 중 오류 발생: {e}")
-        conn.rollback()
-    conn.close()
-
-def kw_normalization(data):
-    data["kw_split"] = data.search_query.apply(lambda x: x.split())
-    data["kw_split"] = data.kw_split.apply(
-        lambda x: [
-            kw
-            for kw in x
-            if any(char.isalpha() or char.isdigit() for char in kw)
-            and kw not in stop_words  # 불용어와 기호 제거
-        ]
-    )
-
-    data["kw_split_lemma"] = data.kw_split.apply(
-        lambda x: [
-            kw if pos_tag([kw])[0][1] == "NN" else lemmatizer.lemmatize(kw) for kw in x
-        ]
-    )
-    data.rename(columns={"search_query": "original_search_query"}, inplace=True)
-    data["search_query"] = data.kw_split_lemma.apply(lambda x: " ".join(x))
-
-    return data
-
-def make_folder(data, word_count, main_keywords_huddle, sub_keywords_huddle):
-    print("Maker folder Start !!")
-    data = data.sort_values("search_query_volume", ascending=False)
-
-    data["kw_split"] = data.search_query.apply(lambda x: x.split())
-    data.index = np.arange(len(data))
-
-    data = kw_normalization(data)  # 써치쿼리를 nomarlization
-    sq_volumes = list(zip(data.search_query, data.search_query_volume))
-
-    total_folder = {}
-    while True:
-        top_folder_name = sq_volumes[0][0]
-        total_sub_folder_df = data[
-            data.search_query.apply(
-                lambda x : top_folder_name in x
-            )
-        ]
-        sub_folder_keywords = total_sub_folder_df.search_query.tolist()
-
-        total_sub_folder = {}
-        while True:
-            sub_folder_name = sub_folder_keywords[0]
-            sub_folder_name_split = sub_folder_name.split()
-            sub_total_df = total_sub_folder_df[
-                total_sub_folder_df.search_query.apply(
-                    lambda x: sub_folder_name in x
-                )
-            ]
-
-            total_sub_keywords = sub_total_df.search_query.tolist()
-
-            total_sub_folder[sub_folder_name] = sub_total_df
-            if len(sub_folder_name_split) > 1:
-                sub_folder_keywords = list(
-                    filter(lambda x: x not in total_sub_keywords, sub_folder_keywords)
-                )
-            else:
-                sub_folder_keywords.remove(sub_folder_name)
-
-            # print(
-            #     f'top folder name >> {top_folder_name}, sub_folder_name >> {sub_folder_name}, sub keyword 갯수 >> {len(sub_total_df)}, sub_folder갯수 >> {len(sub_folder_keywords)}')
-            if len(sub_folder_keywords) == 0:
-                break
-
-        total_folder[top_folder_name] = total_sub_folder
-        sq_volumes = list(filter(lambda x: top_folder_name not in x[0], sq_volumes))
-
-        if len(sq_volumes) == 0:
-            break
-
-    ### line 123 ~ 143 / top folder uncate 만들기 ###
-    uncate_main_folders = []
-
-    for main_folder in total_folder.keys():
-        sub_folders = total_folder[main_folder].keys()
-        sub_folder_dfs = []
-        for sub_folder in sub_folders:
-            sub_folder_df = total_folder[main_folder][sub_folder]
-            sub_folder_dfs.append(sub_folder_df)
-
-        sub_folder_dfs = pd.concat(sub_folder_dfs)
-        sub_folder_dfs = sub_folder_dfs.drop_duplicates(subset="search_query")
-        # print(f'써브폴더 dfs 갯수 >> {len(sub_folder_dfs)}, 메인키워드 허들 갯수 >> {main_keywords_huddle}, 타입1 >> {type(len(sub_folder_dfs))}, 타입2 >> {type(main_keywords_huddle)}')
-        if (
-            len(sub_folder_dfs) < main_keywords_huddle
-            or len(main_folder.split()) > word_count
-        ):
-            uncate_main_folders.append(main_folder)
-
-    uncate_dfs = {}
-    for uncate_folder in uncate_main_folders:
-        uncate_dfs[uncate_folder] = total_folder[uncate_folder]
-        del total_folder[uncate_folder]
-
-    total_folder["uncategorized"] = uncate_dfs
-
-    ### line 145 ~ 161  / sub_folder keyword 의 수가 적으면 언카테고리로 이동시킴 ###
-    for folder_name in total_folder.keys():
-        if folder_name == "uncategorized":
-            continue
-        sub_folder_list = total_folder[folder_name].keys()
-        sub_uncate_dfs = []
-        remove_sub_folders = []
-        for sub_folder in sub_folder_list:
-            sub_folder_df = total_folder[folder_name][sub_folder]
-            if len(sub_folder_df) < sub_keywords_huddle:
-                remove_sub_folders.append(sub_folder)
-                sub_uncate_dfs.append(sub_folder_df)
-                # print(f'sub_folder >> {sub_folder}, {len(sub_folder_df)} 언카테고리로 이동')
-        if len(sub_uncate_dfs) > 0:
-            total_folder[folder_name]["uncategorized"] = pd.concat(sub_uncate_dfs)
-            for remove_folder_name in remove_sub_folders:
-                del total_folder[folder_name][remove_folder_name]
-
-    ### line 96 ~ 121 / 폴더명이 긴 폴더를 >> 폴더명이 짧은 폴더로 합치기 위한 코드 ###
-    sorted_total_folder_names = sorted(
-        list(total_folder.keys()), key=len
-    )  # 폴더이름이 짧은게 위로 올라오도록 정렬
-
-    for folder_name in sorted_total_folder_names:
-        if folder_name not in total_folder.keys():
-            # print(folder_name, '폴더는 이미 제거됨')
-            continue
-
-        merge_folder_names = list(filter(lambda x: folder_name in x and folder_name != x, sorted_total_folder_names))
-
-        if len(merge_folder_names) >= 1:
-            for merge_folder_name in merge_folder_names:
-                if (
-                    merge_folder_name in total_folder.keys()
-                ):  ### 토탈폴더에 지워야 될 폴더가 있으면 폴더합병을 진행
-                    sub_merge_folder_names = total_folder[merge_folder_name].keys()
-                else:
-                    continue
-                for sub_merge_folder_name in sub_merge_folder_names:
-                    if (
-                        sub_merge_folder_name not in total_folder[folder_name].keys()
-                    ):  ### 폴더안에 서브폴더 키워드가 없어야 합병을 진행함
-                        merge_df = total_folder[merge_folder_name][
-                            sub_merge_folder_name
-                        ]
-                        total_folder[folder_name][sub_merge_folder_name] = merge_df
-
-                    # print(f'{merge_folder_name}의 {sub_merge_folder_name}을 {folder_name}에 병합 완료함')
-
-                del total_folder[merge_folder_name]
-
-    main_dict = {"main": {x: y for x, y in total_folder.items()}}
-    total_folder.update(main_dict)
-    total_folder = {
-        key: value
-        for key, value in total_folder.items()
-        if key in ["main", "uncategorized"]
-    }
-    del total_folder["main"]["uncategorized"]
-
-    ### unique data 만드는곳 ###
-    main_folder_data = []
-    for folder_name in total_folder["main"].keys():
-        sub_folders = total_folder["main"][folder_name].keys()
-        for sub_folder in sub_folders:
-            df = total_folder["main"][folder_name][sub_folder]
-            a = df.copy()
-            a["main_folder"] = folder_name
-            a["sub_folder"] = sub_folder
-            main_folder_data.append(a)
-
-    main_folder_df = pd.concat(main_folder_data)
-    main_folder_df['category'] = 'main'
-
-    #### 언카테 폴더로 만드는 데이터 ####
-
-    uncate_data = []
-    for folder_name in total_folder["uncategorized"].keys():
-        sub_folders = total_folder["uncategorized"][folder_name].keys()
-        for sub_folder in sub_folders:
-            df = total_folder["uncategorized"][folder_name][sub_folder]
-            a = df.copy()
-            a["main_folder"] = folder_name
-            a["sub_folder"] = sub_folder
-            uncate_data.append(a)
-
-    uncate_df = pd.concat(uncate_data)
-    uncate_df['category'] = 'uncate'
-
-    return main_folder_df, uncate_df
 
 if __name__ == '__main__':
     # frdate = '2024-01-01'
     # todate = '2024-12-31'
     # asin = 'B09G6BWNDP'
     # sheet_maker(frdate, todate, asin)
-    create_table('zzz')
+    create_table('테스트')
