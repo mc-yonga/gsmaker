@@ -111,6 +111,8 @@ def fetch_impressions_share_by_keywords(frdate, todate, keyword_list):
 
 def merge_data_by_datadive(frdate, todate, keyword_list):
     st.session_state["merge_data_by_datadive"] = None
+    st.session_state["dive_sheet_maker"] = None
+    st.session_state["asin_result_df"] = None
 
     sqp = fetch_sqp_by_keyword_list(frdate, todate, keyword_list)
     top_search_term = fetch_top_search_terms_by_keywords(frdate, todate, keyword_list)
@@ -198,7 +200,7 @@ def sheet_maker_by_datadive(frdate, todate, keyword_list):
             kw_dict[sq] = folder_config
 
         result['folder_config'] = result.search_query.apply(lambda x: kw_dict[x])
-        return result
+        st.session_state["dive_sheet_maker"] = result
 
 
 

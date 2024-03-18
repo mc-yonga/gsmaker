@@ -3,6 +3,8 @@ from superDev import *
 
 def merge_data(frdate, todate, asin):
     st.session_state["merge_data"] = None
+    st.session_state["asin_sheet_maker"] = None
+    st.session_state["asin_result_df"] = None
 
     sqp = fetch_sqp(frdate, todate, asin)
     top_search_term = fetch_top_search_terms(frdate, todate, asin)
@@ -103,6 +105,7 @@ def make_multiple_factors(total_df : pd.DataFrame):
 
 def sheet_maker(frdate, todate, asin):
     merge_data(frdate, todate, asin)
+
     if st.session_state["merge_data"] is not None:
         result = make_multiple_factors(st.session_state["merge_data"])
         kw_data = result.groupby('search_query')['search_query_volume'].sum().reset_index()
@@ -119,7 +122,8 @@ def sheet_maker(frdate, todate, asin):
             kw_dict[sq] = folder_config
 
         result['folder_config'] = result.search_query.apply(lambda x: kw_dict[x])
-        return result
+        st.session_state["asin_sheet_maker"] = result
+
 
 def groupby_maker(result):
     result_groupby = result.groupby('search_query')[
